@@ -21,16 +21,23 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 7px;
 .modal{position:fixed;inset:0;background:#10294a70;display:none;align-items:flex-end;justify-content:center;z-index:10}.modal.show{display:flex}.modalbox{background:#fff;width:min(650px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px}.modalhead{display:flex;justify-content:space-between;align-items:center}.close{border:0;background:#eef2f7;border-radius:10px;width:38px;height:38px}.danger{color:var(--red)}.success{color:var(--green)}
 @media(min-width:700px){.modal{align-items:center}.modalbox{border-radius:22px}.grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:600px){.formgrid{grid-template-columns:1fr}.value{font-size:25px}}
+
+.modebar{display:flex;gap:8px;padding:10px 14px 2px}.modebtn{flex:1;border:1px solid #d9e2ed;background:#fff;color:#66758a;border-radius:13px;padding:11px;font-weight:850}.modebtn.active{background:#183d72;color:#fff}
+.budgetbar{height:10px;background:#e8edf3;border-radius:20px;overflow:hidden}.budgetfill{height:100%;background:#258f87;border-radius:20px}.budgetfill.over{background:#bd352c}.smallinput{width:120px;padding:8px;margin:0}
 </style>
 </head>
 <body>
 <div class="app">
 <header class="top">
-  <div class="brand">Meea's Business Tracker <span class="badge">V3</span></div>
-  <div class="sub">Sales • Expenses • Inventory • Production • Costing</div>
+  <div class="brand">Meea's Finance Tracker <span class="badge">V5</span></div>
+  <div class="sub">Business • Household • Cash Flow • Budgets</div>
   <div class="monthbar"><button class="arrow" onclick="shiftMonth(-1)">‹</button><div class="month" id="month"></div><button class="arrow" onclick="shiftMonth(1)">›</button></div>
 </header>
-
+<div class="modebar">
+<button class="modebtn active" id="businessMode" onclick="switchMode('business')">🏪 Business</button>
+<button class="modebtn" id="householdMode" onclick="switchMode('household')">🏠 Household</button>
+<button class="modebtn" id="ksfiaMode" onclick="switchMode('ksfia')">📒 KSFIA Cash Book</button>
+</div>
 <main>
 <section class="page active" id="home">
   <div class="grid">
@@ -55,9 +62,65 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 7px;
 <section class="page" id="costingPage"><div class="section"><h2>Product Costing</h2><div class="note">Enter your current estimated cost per unit. These are editable planning values, not accounting records.</div><br><div class="tablewrap"><table><thead><tr><th>Product</th><th>Unit Cost</th><th>WSP</th><th>Gross/Unit</th><th>Margin</th></tr></thead><tbody id="costingTable"></tbody></table></div></div></section>
 
 <section class="page" id="reportsPage"><div class="section"><h2>Monthly Report</h2><div id="reportRows"></div></div><div class="section"><h2>Backup & Data</h2><div class="actions"><button class="btn" onclick="exportData()">Export Backup</button><button class="btn alt" onclick="document.getElementById('importFile').click()">Import Backup</button><input id="importFile" type="file" accept=".json" hidden onchange="importData(event)"><button class="btn red" onclick="clearAll()">Clear All Data</button></div><div class="note">Keep an exported backup somewhere safe before changing devices.</div></div></section>
+
+<section class="page" id="hhHome">
+<div class="grid">
+<div class="card"><div class="label">Household Income</div><div class="value blue" id="hhIncome">₱0.00</div></div>
+<div class="card"><div class="label">Household Spending</div><div class="value red" id="hhSpend">₱0.00</div></div>
+<div class="card"><div class="label">Net Cash Flow</div><div class="value green" id="hhNet">₱0.00</div></div>
+<div class="card"><div class="label">Budget Used</div><div class="value blue" id="hhBudgetPct">0%</div></div>
+</div>
+<div class="section"><h2>Monthly Household Budget</h2><div id="hhBudgetOverview"></div></div>
+<div class="section"><h2>Cash Position</h2><div class="row"><span>💵 Cash</span><b id="hhCash">₱0.00</b></div><div class="row"><span>📱 GCash</span><b id="hhGCash">₱0.00</b></div><div class="row"><span>🏦 Bank</span><b id="hhBank">₱0.00</b></div><div class="row"><b>Ending Cash Position</b><b id="hhTotalCash">₱0.00</b></div></div>
+<div class="section"><h2>Unpaid Bills</h2><div id="hhBills" class="muted">No unpaid bills recorded.</div></div>
+</section>
+<section class="page" id="hhIncomePage"><div class="section"><h2>Household Income</h2><div class="actions"><button class="btn" onclick="openHH('income')">＋ Add Income</button></div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Source</th><th>Amount</th><th>Account</th></tr></thead><tbody id="hhIncomeTable"></tbody></table></div></div></section>
+<section class="page" id="hhBudgetPage"><div class="section"><h2>Monthly Budget</h2><div class="note">Set your planned monthly amount. Actual spending is calculated from Household Expenses.</div><br><div class="tablewrap"><table><thead><tr><th>Category</th><th>Budget</th><th>Actual</th><th>Remaining</th></tr></thead><tbody id="hhBudgetTable"></tbody></table></div></div></section>
+<section class="page" id="hhExpensePage"><div class="section"><h2>Household Expenses</h2><div class="actions"><button class="btn" onclick="openHH('expense')">＋ Add Household Expense</button></div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Account</th></tr></thead><tbody id="hhExpenseTable"></tbody></table></div></div></section>
+<section class="page" id="hhBillsPage"><div class="section"><h2>Bills</h2><div class="actions"><button class="btn" onclick="openHH('bill')">＋ Add Bill</button></div><div class="tablewrap"><table><thead><tr><th>Bill</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead><tbody id="hhBillTable"></tbody></table></div></div></section>
+<section class="page" id="hhCashPage"><div class="section"><h2>Household Cash Flow</h2><div id="hhCashReport"></div></div></section>
+
+
+<section class="page" id="ksfiaHome">
+  <div class="grid">
+    <div class="card"><div class="label">Total Receipts</div><div class="value green" id="ksfiaReceipts">₱0.00</div></div>
+    <div class="card"><div class="label">Total Disbursements</div><div class="value red" id="ksfiaDisbursements">₱0.00</div></div>
+    <div class="card"><div class="label">Net Movement</div><div class="value blue" id="ksfiaNet">₱0.00</div></div>
+    <div class="card"><div class="label">Ending Balance</div><div class="value blue" id="ksfiaBalance">₱0.00</div></div>
+  </div>
+  <div class="section">
+    <h2>KSFIA Cash Book</h2>
+    <div class="note">Record every cash receipt and disbursement. The running balance is calculated automatically for the selected month.</div>
+    <div class="actions"><button class="btn" onclick="openKSFIA('receipt')">＋ Cash Receipt</button><button class="btn alt" onclick="openKSFIA('disbursement')">− Disbursement</button></div>
+  </div>
+  <div class="section"><h2>Fund / Account Balances</h2><div id="ksfiaFunds"></div></div>
+</section>
+
+<section class="page" id="ksfiaBookPage">
+  <div class="section">
+    <h2>Cash Book</h2>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Ref.</th><th>Description</th><th>Receipt</th><th>Disbursement</th><th>Balance</th></tr></thead><tbody id="ksfiaBookTable"></tbody></table></div>
+  </div>
+</section>
+
+<section class="page" id="ksfiaReportsPage">
+  <div class="section">
+    <h2>KSFIA Monthly Report</h2>
+    <div id="ksfiaReport"></div>
+  </div>
+</section>
+
+<section class="page" id="ksfiaFundsPage">
+  <div class="section">
+    <h2>Funds / Accounts</h2>
+    <div class="note">Use funds to keep association money separated, such as General Fund, Project Fund, Equipment, or Bank Account.</div>
+    <div class="tablewrap"><table><thead><tr><th>Fund / Account</th><th>Receipts</th><th>Disbursements</th><th>Balance</th></tr></thead><tbody id="ksfiaFundTable"></tbody></table></div>
+  </div>
+</section>
+
 </main>
 
-<nav class="bottom"><div class="bottomin">
+<nav class="bottom"><div class="bottomin" id="businessNav">
 <button class="tab active" onclick="page('home',this)"><span>⌂</span>Dashboard</button>
 <button class="tab" onclick="page('salesPage',this)"><span>₱</span>Sales</button>
 <button class="tab" onclick="page('expensesPage',this)"><span>−</span>Expenses</button>
@@ -65,8 +128,48 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 7px;
 <button class="tab" onclick="page('productionPage',this)"><span>⚙</span>Production</button>
 <button class="tab" onclick="page('costingPage',this)"><span>◈</span>Costing</button>
 <button class="tab" onclick="page('reportsPage',this)"><span>☰</span>Reports</button>
-</div></nav>
+</div><div class="bottomin" id="householdNav" style="display:none">
+<button class="tab active" onclick="page('hhHome',this)"><span>⌂</span>Home</button>
+<button class="tab" onclick="page('hhIncomePage',this)"><span>＋</span>Income</button>
+<button class="tab" onclick="page('hhBudgetPage',this)"><span>▤</span>Budget</button>
+<button class="tab" onclick="page('hhExpensePage',this)"><span>−</span>Expenses</button>
+<button class="tab" onclick="page('hhBillsPage',this)"><span>◷</span>Bills</button>
+<button class="tab" onclick="page('hhCashPage',this)"><span>₱</span>Cash Flow</button>
 </div>
+<div class="bottomin" id="ksfiaNav" style="display:none">
+<button class="tab active" onclick="page('ksfiaHome',this)"><span>⌂</span>Home</button>
+<button class="tab" onclick="page('ksfiaBookPage',this)"><span>▤</span>Cash Book</button>
+<button class="tab" onclick="page('ksfiaFundsPage',this)"><span>₱</span>Funds</button>
+<button class="tab" onclick="page('ksfiaReportsPage',this)"><span>☰</span>Reports</button>
+</div>
+</nav>
+</div>
+
+
+<div class="modal" id="ksfiaModal"><div class="modalbox"><div class="modalhead"><h2 id="ksfiaModalTitle">Cash Receipt</h2><button class="close" onclick="closeKSFIA()">×</button></div>
+<form onsubmit="saveKSFIA(event)">
+<input type="hidden" id="ksfiaType">
+<div class="formgrid">
+<div><label>Date<input type="date" id="ksfiaDate" required></label></div>
+<div><label>Amount (₱)<input type="number" id="ksfiaAmount" step="0.01" min="0" required></label></div>
+<div><label>Reference No.<input id="ksfiaRef" placeholder="OR / voucher / receipt no."></label></div>
+<div><label>Fund / Account<select id="ksfiaFund"></select></label></div>
+<div><label>Category<select id="ksfiaCategory"></select></label></div>
+<div><label>Payee / Source<input id="ksfiaPayee" placeholder="Name / organization"></label></div>
+<div style="grid-column:1/-1"><label>Description<input id="ksfiaDescription" placeholder="Purpose / transaction details"></label></div>
+</div><br><button class="btn" type="submit">Save Entry</button>
+</form></div></div>
+
+<div class="modal" id="hhModal"><div class="modalbox"><div class="modalhead"><h2 id="hhModalTitle">Add Household Entry</h2><button class="close" onclick="closeHH()">×</button></div>
+<form onsubmit="saveHH(event)"><input type="hidden" id="hhType"><div class="formgrid">
+<div><label>Date<input type="date" id="hhDate" required></label></div><div><label>Amount (₱)<input type="number" id="hhAmount" step="0.01" min="0" required></label></div>
+<div id="hhSourceField"><label>Income Source<input id="hhSource" placeholder="Salary / Other"></label></div>
+<div id="hhCatField"><label>Category<select id="hhCategory"></select></label></div>
+<div id="hhBillField"><label>Bill Name<input id="hhBillName" placeholder="Electricity / Water / etc."></label></div>
+<div id="hhDueField"><label>Due Date<input type="date" id="hhDue"></label></div>
+<div><label>Account<select id="hhAccount"><option>Cash</option><option>GCash</option><option>Bank</option></select></label></div>
+<div id="hhPaidField"><label>Status<select id="hhPaid"><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></label></div>
+</div><br><button class="btn" type="submit">Save</button></form></div></div>
 
 <div class="modal" id="modal"><div class="modalbox"><div class="modalhead"><h2 id="modalTitle">Add Sale</h2><button class="close" onclick="closeModal()">×</button></div><form id="txForm" onsubmit="saveTx(event)"><input type="hidden" id="txType"><div class="formgrid">
 <div><label>Date<input type="date" id="txDate" required></label></div>
@@ -89,14 +192,78 @@ const P=[
 ["Coco Yema Ensaymada 4pcs",115,140],["Coco Yema Ensaymada 9pcs",250,300]
 ];
 const defaultCosts={"Cocobites 10pcs":38,"Cocobites 20pcs":84.71,"Coco Kamote Candy":38,"Coco Power Bar":25,"Coco Latik":40,"Ube Latik":45,"Coco Yema Ensaymada 4pcs":80,"Coco Yema Ensaymada 9pcs":155};
-let state=JSON.parse(localStorage.getItem("meea_v3")||"null")||{tx:[],inventory:{},production:[],costs:defaultCosts};
+let state=JSON.parse(localStorage.getItem("meea_v4")||"null")||{tx:[],inventory:{},production:[],costs:defaultCosts,household:{income:[],expenses:[],bills:[],budgets:{}}};
+if(!state.household)state.household={income:[],expenses:[],bills:[],budgets:{}};
+if(!state.ksfia)state.ksfia={entries:[],funds:["General Fund","Project Fund","Equipment Fund","Bank Account"]};
+const HH_CATS=["Housing / Rent","Education","Groceries","Utilities","Internet / Phone","Transportation","Loans / Debt","Family","Health","Personal","Savings","Other"];
+HH_CATS.forEach(c=>{if(state.household.budgets[c]==null)state.household.budgets[c]=0});
 P.forEach(x=>{if(state.inventory[x[0]]==null)state.inventory[x[0]]=0;if(state.costs[x[0]]==null)state.costs[x[0]]=defaultCosts[x[0]]});
 let d=new Date();d.setDate(1);
 const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});
 const key=()=>d.toISOString().slice(0,7);
-function persist(){localStorage.setItem("meea_v3",JSON.stringify(state))}
+function persist(){localStorage.setItem("meea_v4",JSON.stringify(state))}
 function labelMonth(){return d.toLocaleDateString("en-US",{month:"long",year:"numeric"})}
 function monthTx(){return state.tx.filter(x=>x.date.slice(0,7)===key())}
+
+let currentMode="business";
+function switchMode(mode){
+ currentMode=mode;
+ document.getElementById("businessMode").classList.toggle("active",mode==="business");
+ document.getElementById("householdMode").classList.toggle("active",mode==="household");
+ document.getElementById("ksfiaMode").classList.toggle("active",mode==="ksfia");
+ document.getElementById("businessNav").style.display=mode==="business"?"flex":"none";
+ document.getElementById("householdNav").style.display=mode==="household"?"flex":"none";
+ document.getElementById("ksfiaNav").style.display=mode==="ksfia"?"flex":"none";
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ document.getElementById(mode==="business"?"home":mode==="household"?"hhHome":"ksfiaHome").classList.add("active");
+ if(mode==="household")renderHousehold();
+ if(mode==="ksfia")renderKSFIA();
+}
+function hhRows(){return state.household.expenses.filter(x=>x.date.slice(0,7)===key())}function hhIncomeRows(){return state.household.income.filter(x=>x.date.slice(0,7)===key())}
+function renderHousehold(){
+const inc=hhIncomeRows().reduce((a,x)=>a+x.amount,0),ex=hhRows().reduce((a,x)=>a+x.amount,0),bt=HH_CATS.reduce((a,c)=>a+(Number(state.household.budgets[c])||0),0);
+document.getElementById("hhIncome").textContent=peso(inc);document.getElementById("hhSpend").textContent=peso(ex);document.getElementById("hhNet").textContent=peso(inc-ex);document.getElementById("hhBudgetPct").textContent=(bt?ex/bt*100:0).toFixed(1)+"%";
+let actual={};HH_CATS.forEach(c=>actual[c]=0);hhRows().forEach(x=>actual[x.category]=(actual[x.category]||0)+x.amount);
+document.getElementById("hhBudgetOverview").innerHTML=HH_CATS.map(c=>{let b=Number(state.household.budgets[c])||0,a=actual[c]||0,p=b?a/b*100:0;return `<div class="row"><div style="flex:1"><b>${c}</b><div class="muted">${peso(a)} / ${peso(b)} ${b?"• "+p.toFixed(0)+"%":""}</div><div class="budgetbar"><div class="budgetfill ${p>100?"over":""}" style="width:${Math.min(100,p)}%"></div></div></div></div>`}).join("");
+let bal={Cash:0,GCash:0,Bank:0};hhIncomeRows().forEach(x=>bal[x.account]+=x.amount);hhRows().forEach(x=>bal[x.account]-=x.amount);
+document.getElementById("hhCash").textContent=peso(bal.Cash);document.getElementById("hhGCash").textContent=peso(bal.GCash);document.getElementById("hhBank").textContent=peso(bal.Bank);document.getElementById("hhTotalCash").textContent=peso(bal.Cash+bal.GCash+bal.Bank);
+let bills=state.household.bills.filter(x=>x.status==="unpaid").sort((a,b)=>a.due.localeCompare(b.due));document.getElementById("hhBills").innerHTML=bills.length?bills.map(x=>`<div class="row"><span>${x.name}<br><small class="muted">Due ${x.due}</small></span><b class="red">${peso(x.amount)}</b></div>`).join(""):"No unpaid bills recorded.";
+document.getElementById("hhIncomeTable").innerHTML=hhIncomeRows().slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.source}</td><td class="green">${peso(x.amount)}</td><td>${x.account}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">No income recorded.</td></tr>`;
+document.getElementById("hhExpenseTable").innerHTML=hhRows().slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.category}</td><td class="red">${peso(x.amount)}</td><td>${x.account}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">No household expenses recorded.</td></tr>`;
+document.getElementById("hhBudgetTable").innerHTML=HH_CATS.map(c=>`<tr><td>${c}</td><td><input class="smallinput" type="number" step="0.01" value="${state.household.budgets[c]||0}" onchange="setHHBudget('${c.replace(/'/g,"\\'")}',this.value)"></td><td>${peso(actual[c])}</td><td class="${actual[c]>(state.household.budgets[c]||0)&&state.household.budgets[c]>0?"red":"green"}">${peso((state.household.budgets[c]||0)-actual[c])}</td></tr>`).join("");
+document.getElementById("hhBillTable").innerHTML=state.household.bills.slice().sort((a,b)=>a.due.localeCompare(b.due)).map((x,i)=>`<tr><td>${x.name}</td><td>${x.due}</td><td>${peso(x.amount)}</td><td><button class="btn ${x.status==="paid"?"green":"alt"}" onclick="toggleBill(${state.household.bills.indexOf(x)})">${x.status==="paid"?"Paid":"Mark Paid"}</button></td></tr>`).join("")||`<tr><td colspan="4" class="muted">No bills recorded.</td></tr>`;
+document.getElementById("hhCashReport").innerHTML=`<div class="row"><span>Household Income</span><b class="green">${peso(inc)}</b></div><div class="row"><span>Household Expenses</span><b class="red">${peso(ex)}</b></div><div class="row"><b>Net Cash Flow</b><b class="${inc-ex>=0?"green":"red"}">${peso(inc-ex)}</b></div><div class="note">Business and household records are kept separate.</div>`;
+persist();
+}
+function setHHBudget(c,v){state.household.budgets[c]=Number(v)||0;persist();renderHousehold()}
+function openHH(type){document.getElementById("hhModal").classList.add("show");document.getElementById("hhType").value=type;document.getElementById("hhModalTitle").textContent=type==="income"?"Add Household Income":type==="expense"?"Add Household Expense":"Add Household Bill";document.getElementById("hhDate").value=new Date().toISOString().slice(0,10);document.getElementById("hhCategory").innerHTML=HH_CATS.map(c=>`<option>${c}</option>`).join("");document.getElementById("hhSourceField").style.display=type==="income"?"block":"none";document.getElementById("hhCatField").style.display=type==="expense"?"block":"none";document.getElementById("hhBillField").style.display=type==="bill"?"block":"none";document.getElementById("hhDueField").style.display=type==="bill"?"block":"none";document.getElementById("hhPaidField").style.display=type==="bill"?"block":"none"}
+function closeHH(){document.getElementById("hhModal").classList.remove("show")}
+function saveHH(e){e.preventDefault();let type=document.getElementById("hhType").value,amount=Number(document.getElementById("hhAmount").value),date=document.getElementById("hhDate").value,account=document.getElementById("hhAccount").value;if(type==="income")state.household.income.push({date,amount,account,source:document.getElementById("hhSource").value||"Other"});if(type==="expense")state.household.expenses.push({date,amount,account,category:document.getElementById("hhCategory").value});if(type==="bill")state.household.bills.push({name:document.getElementById("hhBillName").value||"Bill",due:document.getElementById("hhDue").value||date,amount,status:document.getElementById("hhPaid").value});persist();closeHH();renderHousehold()}
+
+
+const KSFIA_CATS=["Membership / Contributions","Government / Project Fund","Service / Equipment Fees","Bank Interest","Cash Award / Grant","Supplies","Labor / Honorarium","Equipment / Repair","Transportation","Meetings / Food","Bank Charges","Other"];
+function ksfiaRows(){return state.ksfia.entries.filter(x=>x.date.slice(0,7)===key()).sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id)}
+function renderKSFIA(){
+ const rows=ksfiaRows(), receipts=rows.filter(x=>x.type==="receipt").reduce((a,x)=>a+x.amount,0), disb=rows.filter(x=>x.type==="disbursement").reduce((a,x)=>a+x.amount,0);
+ document.getElementById("ksfiaReceipts").textContent=peso(receipts);document.getElementById("ksfiaDisbursements").textContent=peso(disb);document.getElementById("ksfiaNet").textContent=peso(receipts-disb);
+ let balance=0; rows.forEach(x=>balance += x.type==="receipt"?x.amount:-x.amount); document.getElementById("ksfiaBalance").textContent=peso(balance);
+ let running=0; document.getElementById("ksfiaBookTable").innerHTML=rows.map(x=>{running+=x.type==="receipt"?x.amount:-x.amount;return `<tr><td>${x.date}</td><td>${x.ref||""}</td><td><b>${x.category}</b><br><small>${x.description||""}${x.payee?` • ${x.payee}`:""}</small></td><td class="green">${x.type==="receipt"?peso(x.amount):""}</td><td class="red">${x.type==="disbursement"?peso(x.amount):""}</td><td>${peso(running)}</td></tr>`}).join("")||`<tr><td colspan="6" class="muted">No cash book entries for this month.</td></tr>`;
+ let fundMap={}; state.ksfia.funds.forEach(f=>fundMap[f]={r:0,d:0}); rows.forEach(x=>{if(!fundMap[x.fund])fundMap[x.fund]={r:0,d:0};if(x.type==="receipt")fundMap[x.fund].r+=x.amount;else fundMap[x.fund].d+=x.amount});
+ document.getElementById("ksfiaFunds").innerHTML=state.ksfia.funds.map(f=>`<div class="row"><span>${f}</span><b>${peso(fundMap[f].r-fundMap[f].d)}</b></div>`).join("");
+ document.getElementById("ksfiaFundTable").innerHTML=Object.keys(fundMap).map(f=>`<tr><td>${f}</td><td class="green">${peso(fundMap[f].r)}</td><td class="red">${peso(fundMap[f].d)}</td><td>${peso(fundMap[f].r-fundMap[f].d)}</td></tr>`).join("");
+ document.getElementById("ksfiaReport").innerHTML=`<div class="row"><span>Total receipts</span><b class="green">${peso(receipts)}</b></div><div class="row"><span>Total disbursements</span><b class="red">${peso(disb)}</b></div><div class="row"><b>Net movement</b><b>${peso(receipts-disb)}</b></div><div class="row"><b>Ending balance</b><b>${peso(balance)}</b></div><div class="note">This report covers ${key()}. For formal association reporting, reconcile the cash book against bank statements, vouchers, receipts and approved resolutions.</div>`;
+ persist();
+}
+function openKSFIA(type){
+ document.getElementById("ksfiaModal").classList.add("show");document.getElementById("ksfiaType").value=type;
+ document.getElementById("ksfiaModalTitle").textContent=type==="receipt"?"Cash Receipt":"Cash Disbursement";
+ document.getElementById("ksfiaDate").value=new Date().toISOString().slice(0,10);
+ document.getElementById("ksfiaFund").innerHTML=state.ksfia.funds.map(f=>`<option>${f}</option>`).join("");
+ document.getElementById("ksfiaCategory").innerHTML=KSFIA_CATS.map(c=>`<option>${c}</option>`).join("");
+}
+function closeKSFIA(){document.getElementById("ksfiaModal").classList.remove("show")}
+function saveKSFIA(e){e.preventDefault();state.ksfia.entries.push({id:Date.now(),type:document.getElementById("ksfiaType").value,date:document.getElementById("ksfiaDate").value,amount:Number(document.getElementById("ksfiaAmount").value),ref:document.getElementById("ksfiaRef").value,fund:document.getElementById("ksfiaFund").value,category:document.getElementById("ksfiaCategory").value,payee:document.getElementById("ksfiaPayee").value,description:document.getElementById("ksfiaDescription").value});persist();closeKSFIA();renderKSFIA()}
+
 function render(){
 document.getElementById("month").textContent=labelMonth();const rows=monthTx(),sales=rows.filter(x=>x.type==="sale").reduce((a,x)=>a+x.amount,0),exp=rows.filter(x=>x.type==="expense").reduce((a,x)=>a+x.amount,0);
 document.getElementById("sales").textContent=peso(sales);document.getElementById("expenses").textContent=peso(exp);document.getElementById("profit").textContent=peso(sales-exp);document.getElementById("tx").textContent=rows.length;document.getElementById("targetNow").textContent=peso(sales);document.getElementById("targetBar").style.width=Math.min(100,sales/130000*100)+"%";
@@ -126,8 +293,8 @@ function closeProduction(){document.getElementById("prodModal").classList.remove
 function saveProduction(e){e.preventDefault();let p=document.getElementById("prodProduct").value,q=Number(document.getElementById("prodQty").value),cost=Number(document.getElementById("prodCost").value);state.production.push({date:document.getElementById("prodDate").value,product:p,qty:q,cost});state.inventory[p]=(state.inventory[p]||0)+q;persist();closeProduction();render()}
 function exportData(){let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="meea-business-backup-"+key()+".json";a.click();URL.revokeObjectURL(a.href)}
 function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);P.forEach(x=>{if(state.inventory[x[0]]==null)state.inventory[x[0]]=0;if(state.costs[x[0]]==null)state.costs[x[0]]=0});persist();render();alert("Backup imported successfully.");}catch(err){alert("Invalid backup file.");}};r.readAsText(f)}
-function clearAll(){if(confirm("Delete all Meea's tracker data on this device? Export a backup first if needed.")){state={tx:[],inventory:{},production:[],costs:{...defaultCosts}};P.forEach(x=>state.inventory[x[0]]=0);persist();render()}}
-render();
+function clearAll(){if(confirm("Delete all Meea's tracker data on this device? Export a backup first if needed.")){state={tx:[],inventory:{},production:[],costs:{...defaultCosts},household:{income:[],expenses:[],bills:[],budgets:{}},ksfia:{entries:[],funds:["General Fund","Project Fund","Equipment Fund","Bank Account"]}};HH_CATS.forEach(c=>state.household.budgets[c]=0);P.forEach(x=>state.inventory[x[0]]=0);persist();render()}}
+render();renderHousehold();renderKSFIA();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>

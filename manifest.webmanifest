@@ -1,11 +1,11 @@
 {
-  "name": "Meea's Business Tracker",
-  "short_name": "Meea Tracker",
+  "name": "Meea's Finance Tracker",
+  "short_name": "Meea Finance",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f3f6fa",
   "theme_color": "#183d72",
-  "description": "Meea's Business Tracker V3",
+  "description": "Meea's Business, Household and KSFIA Cash Book",
   "icons": [
     {
       "src": "icon.svg",
