@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#183d72">
+<meta name="description" content="Meea's Business Tracker">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Meea's Business Tracker</title>
+<style>
+:root{--navy:#183d72;--teal:#258f87;--green:#17834f;--red:#bd352c;--gold:#c79a2b;--bg:#f3f6fa;--card:#fff;--text:#18304f;--muted:#718096;--line:#e4eaf1}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}.app{max-width:1050px;margin:auto;min-height:100vh;padding-bottom:78px}.top{padding:20px 18px 8px;background:linear-gradient(180deg,#edf4fc,#f3f6fa)}
+.brand{font-weight:850;font-size:23px;color:var(--navy)}.badge{font-size:11px;padding:5px 9px;background:#dff4ef;color:#27857e;border-radius:20px;margin-left:6px}.sub{color:var(--muted);margin-top:3px}.monthbar{display:flex;justify-content:space-between;align-items:center;margin:20px 0 4px}.month{font-weight:850;font-size:24px}.arrow{width:48px;height:48px;border:1px solid var(--line);background:#fff;border-radius:14px;color:var(--navy);font-size:25px}
+.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:12px 14px}.card,.section{background:#fff;border-radius:20px;box-shadow:0 5px 18px #183d7210}.card{padding:18px}.label{color:#66758a;font-weight:700}.value{font-size:28px;font-weight:900;margin-top:7px}.blue{color:var(--navy)}.green{color:var(--green)}.red{color:var(--red)}
+.section{margin:14px;padding:18px}.section h2{font-size:20px;margin:0 0 14px}.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.muted{color:var(--muted)}.progress{height:13px;background:#e8edf3;border-radius:20px;overflow:hidden}.bar{height:100%;background:var(--teal);width:0}.targetline{display:flex;justify-content:space-between;margin:8px 0 10px}
+.btn{border:0;background:var(--navy);color:#fff;border-radius:12px;padding:11px 14px;font-weight:800}.btn.alt{background:#eaf1fb;color:var(--navy)}.btn.green{background:var(--green);color:white}.btn.red{background:#fdeceb;color:var(--red)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:#66758a}
+.tablewrap{overflow:auto}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}label{font-size:13px;font-weight:750;color:#607086}input,select{width:100%;margin-top:4px;padding:11px;border:1px solid #d7e0ea;border-radius:10px;background:#fff}.note{background:#f7fafc;border-radius:13px;padding:12px;color:#5f7084;font-size:13px}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5}.bottomin{width:min(1050px,100%);display:flex;overflow:auto}.tab{flex:1;min-width:76px;border:0;background:white;color:#718096;padding:10px 5px;font-size:12px;font-weight:750}.tab span{display:block;font-size:21px;margin-bottom:2px}.tab.active{color:var(--navy);background:#edf3fb}
+.modal{position:fixed;inset:0;background:#10294a70;display:none;align-items:flex-end;justify-content:center;z-index:10}.modal.show{display:flex}.modalbox{background:#fff;width:min(650px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px}.modalhead{display:flex;justify-content:space-between;align-items:center}.close{border:0;background:#eef2f7;border-radius:10px;width:38px;height:38px}.danger{color:var(--red)}.success{color:var(--green)}
+@media(min-width:700px){.modal{align-items:center}.modalbox{border-radius:22px}.grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:600px){.formgrid{grid-template-columns:1fr}.value{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand">Meea's Business Tracker <span class="badge">V3</span></div>
+  <div class="sub">Sales • Expenses • Inventory • Production • Costing</div>
+  <div class="monthbar"><button class="arrow" onclick="shiftMonth(-1)">‹</button><div class="month" id="month"></div><button class="arrow" onclick="shiftMonth(1)">›</button></div>
+</header>
+
+<main>
+<section class="page active" id="home">
+  <div class="grid">
+    <div class="card"><div class="label">Sales</div><div class="value blue" id="sales">₱0.00</div></div>
+    <div class="card"><div class="label">Expenses</div><div class="value red" id="expenses">₱0.00</div></div>
+    <div class="card"><div class="label">Net Profit</div><div class="value green" id="profit">₱0.00</div></div>
+    <div class="card"><div class="label">Transactions</div><div class="value blue" id="tx">0</div></div>
+  </div>
+  <div class="section"><h2>₱130,000 Monthly WSP Target</h2><div class="targetline"><span id="targetNow">₱0</span><b>₱130,000</b></div><div class="progress"><div class="bar" id="targetBar"></div></div></div>
+  <div class="section"><h2>Cash Position</h2><div class="row"><span>💵 Cash</span><b id="cash">₱0.00</b></div><div class="row"><span>📱 GCash</span><b id="gcash">₱0.00</b></div><div class="row"><span>🏦 Bank</span><b id="bank">₱0.00</b></div><div class="row"><b>Total Cash Position</b><b id="totalcash">₱0.00</b></div></div>
+  <div class="section"><h2>Product Sales</h2><div id="productSales" class="muted">No sales this month.</div></div>
+</section>
+
+<section class="page" id="salesPage"><div class="section"><h2>Sales</h2><div class="actions"><button class="btn" onclick="openTx('sale')">＋ Add Sale</button></div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Amount</th><th>Payment</th></tr></thead><tbody id="salesTable"></tbody></table></div></div></section>
+
+<section class="page" id="expensesPage"><div class="section"><h2>Expenses</h2><div class="actions"><button class="btn" onclick="openTx('expense')">＋ Add Expense</button></div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Payment</th></tr></thead><tbody id="expenseTable"></tbody></table></div></div></section>
+
+<section class="page" id="inventoryPage"><div class="section"><h2>Finished Goods Inventory</h2><div class="actions"><button class="btn green" onclick="openStock('in')">＋ Stock In</button><button class="btn alt" onclick="openStock('adjust')">Adjust Stock</button></div><div class="tablewrap"><table><thead><tr><th>Product</th><th>Stock</th><th>Unit</th><th>WSP</th></tr></thead><tbody id="inventoryTable"></tbody></table></div><div class="note">Sales automatically reduce finished-goods stock. Production/Stock In increases it.</div></div></section>
+
+<section class="page" id="productionPage"><div class="section"><h2>Production</h2><div class="actions"><button class="btn green" onclick="openProduction()">＋ Record Production</button></div><div class="tablewrap"><table><thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Batch Cost</th><th>Cost/Unit</th></tr></thead><tbody id="productionTable"></tbody></table></div></div></section>
+
+<section class="page" id="costingPage"><div class="section"><h2>Product Costing</h2><div class="note">Enter your current estimated cost per unit. These are editable planning values, not accounting records.</div><br><div class="tablewrap"><table><thead><tr><th>Product</th><th>Unit Cost</th><th>WSP</th><th>Gross/Unit</th><th>Margin</th></tr></thead><tbody id="costingTable"></tbody></table></div></div></section>
+
+<section class="page" id="reportsPage"><div class="section"><h2>Monthly Report</h2><div id="reportRows"></div></div><div class="section"><h2>Backup & Data</h2><div class="actions"><button class="btn" onclick="exportData()">Export Backup</button><button class="btn alt" onclick="document.getElementById('importFile').click()">Import Backup</button><input id="importFile" type="file" accept=".json" hidden onchange="importData(event)"><button class="btn red" onclick="clearAll()">Clear All Data</button></div><div class="note">Keep an exported backup somewhere safe before changing devices.</div></div></section>
+</main>
+
+<nav class="bottom"><div class="bottomin">
+<button class="tab active" onclick="page('home',this)"><span>⌂</span>Dashboard</button>
+<button class="tab" onclick="page('salesPage',this)"><span>₱</span>Sales</button>
+<button class="tab" onclick="page('expensesPage',this)"><span>−</span>Expenses</button>
+<button class="tab" onclick="page('inventoryPage',this)"><span>▣</span>Inventory</button>
+<button class="tab" onclick="page('productionPage',this)"><span>⚙</span>Production</button>
+<button class="tab" onclick="page('costingPage',this)"><span>◈</span>Costing</button>
+<button class="tab" onclick="page('reportsPage',this)"><span>☰</span>Reports</button>
+</div></nav>
+</div>
+
+<div class="modal" id="modal"><div class="modalbox"><div class="modalhead"><h2 id="modalTitle">Add Sale</h2><button class="close" onclick="closeModal()">×</button></div><form id="txForm" onsubmit="saveTx(event)"><input type="hidden" id="txType"><div class="formgrid">
+<div><label>Date<input type="date" id="txDate" required></label></div>
+<div><label>Amount (₱)<input type="number" id="txAmount" step="0.01" min="0" required></label></div>
+<div id="saleProduct"><label>Product<select id="txProduct"></select></label></div>
+<div id="saleQty"><label>Quantity<input type="number" id="txQty" min="1" value="1"></label></div>
+<div id="expenseCat"><label>Category<select id="txCategory"><option>Ingredients</option><option>Packaging</option><option>Labor</option><option>LPG</option><option>Electricity</option><option>Water</option><option>Internet</option><option>Delivery / Marketing</option><option>Owner Salary</option><option>Other</option></select></label></div>
+<div><label>Payment<select id="txPayment"><option>Cash</option><option>GCash</option><option>Bank</option></select></label></div>
+<div><label>Customer / Note<input id="txNote" placeholder="Optional"></label></div>
+</div><br><button class="btn" type="submit">Save</button></form></div></div>
+
+<div class="modal" id="stockModal"><div class="modalbox"><div class="modalhead"><h2>Inventory Adjustment</h2><button class="close" onclick="closeStock()">×</button></div><form onsubmit="saveStock(event)"><div class="formgrid"><div><label>Product<select id="stockProduct"></select></label></div><div><label>Quantity<input type="number" id="stockQty" min="1" required></label></div><div><label>Action<select id="stockAction"><option value="in">Stock In</option><option value="adjust">Set Stock To</option></select></label></div></div><br><button class="btn" type="submit">Save</button></form></div></div>
+
+<div class="modal" id="prodModal"><div class="modalbox"><div class="modalhead"><h2>Record Production</h2><button class="close" onclick="closeProduction()">×</button></div><form onsubmit="saveProduction(event)"><div class="formgrid"><div><label>Date<input type="date" id="prodDate" required></label></div><div><label>Product<select id="prodProduct"></select></label></div><div><label>Quantity Produced<input type="number" id="prodQty" min="1" required></label></div><div><label>Batch Cost (₱)<input type="number" id="prodCost" step="0.01" min="0" required></label></div></div><br><button class="btn green" type="submit">Save Production</button></form></div></div>
+
+<script>
+const P=[
+["Cocobites 10pcs",65,90],["Cocobites 20pcs",125,150],["Coco Kamote Candy",50,75],
+["Coco Power Bar",35,50],["Coco Latik",60,75],["Ube Latik",70,85],
+["Coco Yema Ensaymada 4pcs",115,140],["Coco Yema Ensaymada 9pcs",250,300]
+];
+const defaultCosts={"Cocobites 10pcs":38,"Cocobites 20pcs":84.71,"Coco Kamote Candy":38,"Coco Power Bar":25,"Coco Latik":40,"Ube Latik":45,"Coco Yema Ensaymada 4pcs":80,"Coco Yema Ensaymada 9pcs":155};
+let state=JSON.parse(localStorage.getItem("meea_v3")||"null")||{tx:[],inventory:{},production:[],costs:defaultCosts};
+P.forEach(x=>{if(state.inventory[x[0]]==null)state.inventory[x[0]]=0;if(state.costs[x[0]]==null)state.costs[x[0]]=defaultCosts[x[0]]});
+let d=new Date();d.setDate(1);
+const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});
+const key=()=>d.toISOString().slice(0,7);
+function persist(){localStorage.setItem("meea_v3",JSON.stringify(state))}
+function labelMonth(){return d.toLocaleDateString("en-US",{month:"long",year:"numeric"})}
+function monthTx(){return state.tx.filter(x=>x.date.slice(0,7)===key())}
+function render(){
+document.getElementById("month").textContent=labelMonth();const rows=monthTx(),sales=rows.filter(x=>x.type==="sale").reduce((a,x)=>a+x.amount,0),exp=rows.filter(x=>x.type==="expense").reduce((a,x)=>a+x.amount,0);
+document.getElementById("sales").textContent=peso(sales);document.getElementById("expenses").textContent=peso(exp);document.getElementById("profit").textContent=peso(sales-exp);document.getElementById("tx").textContent=rows.length;document.getElementById("targetNow").textContent=peso(sales);document.getElementById("targetBar").style.width=Math.min(100,sales/130000*100)+"%";
+let balances={Cash:0,GCash:0,Bank:0};rows.forEach(x=>balances[x.payment]+=(x.type==="sale"?x.amount:-x.amount));
+["Cash","GCash","Bank"].forEach(p=>document.getElementById(p.toLowerCase()).textContent=peso(balances[p]));document.getElementById("totalcash").textContent=peso(balances.Cash+balances.GCash+balances.Bank);
+let ps={};rows.filter(x=>x.type==="sale").forEach(x=>ps[x.product]=(ps[x.product]||0)+x.amount);document.getElementById("productSales").innerHTML=Object.keys(ps).length?Object.entries(ps).map(([p,v])=>`<div class="row"><span>${p}</span><b>${peso(v)}</b></div>`).join(""):"No sales this month.";
+document.getElementById("salesTable").innerHTML=rows.filter(x=>x.type==="sale").slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.product}</td><td>${x.qty}</td><td class="green">${peso(x.amount)}</td><td>${x.payment}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">No sales recorded.</td></tr>`;
+document.getElementById("expenseTable").innerHTML=rows.filter(x=>x.type==="expense").slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.category}</td><td class="red">${peso(x.amount)}</td><td>${x.payment}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">No expenses recorded.</td></tr>`;
+document.getElementById("inventoryTable").innerHTML=P.map(x=>`<tr><td>${x[0]}</td><td><b>${state.inventory[x[0]]||0}</b></td><td>pcs</td><td>${peso(x[1])}</td></tr>`).join("");
+document.getElementById("productionTable").innerHTML=state.production.filter(x=>x.date.slice(0,7)===key()).slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.product}</td><td>${x.qty}</td><td>${peso(x.cost)}</td><td>${peso(x.cost/x.qty)}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">No production recorded.</td></tr>`;
+document.getElementById("costingTable").innerHTML=P.map(x=>{let c=state.costs[x[0]]||0,m=x[1]?((x[1]-c)/x[1]*100):0;return `<tr><td>${x[0]}</td><td><input type="number" value="${c}" step="0.01" onchange="setCost('${esc(x[0])}',this.value)"></td><td>${peso(x[1])}</td><td>${peso(x[1]-c)}</td><td>${m.toFixed(1)}%</td></tr>`}).join("");
+document.getElementById("reportRows").innerHTML=`<div class="row"><span>Sales / WSP</span><b>${peso(sales)}</b></div><div class="row"><span>Expenses</span><b class="red">${peso(exp)}</b></div><div class="row"><span>Net Profit</span><b class="green">${peso(sales-exp)}</b></div><div class="row"><span>Target Progress</span><b>${(sales/130000*100).toFixed(1)}%</b></div><div class="row"><span>Transactions</span><b>${rows.length}</b></div>`;
+persist()
+}
+function esc(s){return s.replace(/'/g,"\\'")}
+function setCost(p,v){state.costs[p]=Number(v)||0;persist();render()}
+function shiftMonth(n){d.setMonth(d.getMonth()+n);render()}
+function page(id,el){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));el.classList.add("active");window.scrollTo(0,0)}
+function openTx(type){document.getElementById("modal").classList.add("show");document.getElementById("txType").value=type;document.getElementById("modalTitle").textContent=type==="sale"?"Add Sale":"Add Expense";document.getElementById("txDate").value=new Date().toISOString().slice(0,10);document.getElementById("saleProduct").style.display=type==="sale"?"block":"none";document.getElementById("saleQty").style.display=type==="sale"?"block":"none";document.getElementById("expenseCat").style.display=type==="expense"?"block":"none";document.getElementById("txProduct").innerHTML=P.map(x=>`<option>${x[0]}</option>`).join("")}
+function closeModal(){document.getElementById("modal").classList.remove("show");document.getElementById("txForm").reset()}
+function saveTx(e){e.preventDefault();let type=document.getElementById("txType").value, product=document.getElementById("txProduct").value,qty=type==="sale"?Number(document.getElementById("txQty").value):0,amount=Number(document.getElementById("txAmount").value);state.tx.push({id:Date.now(),date:document.getElementById("txDate").value,type,amount,product,qty,payment:document.getElementById("txPayment").value,category:document.getElementById("txCategory").value,note:document.getElementById("txNote").value});if(type==="sale")state.inventory[product]=Math.max(0,(state.inventory[product]||0)-qty);persist();closeModal();render()}
+function openStock(){document.getElementById("stockModal").classList.add("show");document.getElementById("stockProduct").innerHTML=P.map(x=>`<option>${x[0]}</option>`).join("")}
+function closeStock(){document.getElementById("stockModal").classList.remove("show")}
+function saveStock(e){e.preventDefault();let p=document.getElementById("stockProduct").value,q=Number(document.getElementById("stockQty").value),a=document.getElementById("stockAction").value;if(a==="in")state.inventory[p]=(state.inventory[p]||0)+q;else state.inventory[p]=q;persist();closeStock();render()}
+function openProduction(){document.getElementById("prodModal").classList.add("show");document.getElementById("prodDate").value=new Date().toISOString().slice(0,10);document.getElementById("prodProduct").innerHTML=P.map(x=>`<option>${x[0]}</option>`).join("")}
+function closeProduction(){document.getElementById("prodModal").classList.remove("show")}
+function saveProduction(e){e.preventDefault();let p=document.getElementById("prodProduct").value,q=Number(document.getElementById("prodQty").value),cost=Number(document.getElementById("prodCost").value);state.production.push({date:document.getElementById("prodDate").value,product:p,qty:q,cost});state.inventory[p]=(state.inventory[p]||0)+q;persist();closeProduction();render()}
+function exportData(){let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="meea-business-backup-"+key()+".json";a.click();URL.revokeObjectURL(a.href)}
+function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);P.forEach(x=>{if(state.inventory[x[0]]==null)state.inventory[x[0]]=0;if(state.costs[x[0]]==null)state.costs[x[0]]=0});persist();render();alert("Backup imported successfully.");}catch(err){alert("Invalid backup file.");}};r.readAsText(f)}
+function clearAll(){if(confirm("Delete all Meea's tracker data on this device? Export a backup first if needed.")){state={tx:[],inventory:{},production:[],costs:{...defaultCosts}};P.forEach(x=>state.inventory[x[0]]=0);persist();render()}}
+render();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
